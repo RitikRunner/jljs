@@ -43,13 +43,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const videoSection = document.querySelector(".video.u-section");
   const videoFrame = document.querySelector(".video .c-video");
   const videoWrapper = document.querySelector(".video .video_wrapper");
+  const videoPlayer = document.querySelector(".video .video_plyr");
 
-  if (videoSection && videoFrame && videoWrapper) {
+  if (videoSection && videoFrame && videoWrapper && videoPlayer) {
+    const getRevealWidth = () => Math.min(window.innerWidth * 0.9, 1800);
+    const getRevealHeight = () => Math.min(window.innerHeight * 0.42, 420);
+
     const getCoverScale = () => {
-      const frameWidth = videoFrame.offsetWidth || 1;
-      const frameHeight = videoFrame.offsetHeight || 1;
+      const frameWidth = getRevealWidth() || 1;
+      const frameHeight = getRevealHeight() || 1;
       return Math.max(window.innerWidth / frameWidth, window.innerHeight / frameHeight);
     };
+
+    gsap.set(videoFrame, {
+      width: "min(88vw, 96rem)",
+      height: "0.9rem",
+    });
 
     const videoTimeline = gsap.timeline({
       scrollTrigger: {
@@ -65,22 +74,60 @@ document.addEventListener("DOMContentLoaded", () => {
       .to(
         videoFrame,
         {
-          scale: () => getCoverScale(),
-          ease: "none",
-          duration: 0.12,
+          width: () => getRevealWidth(),
+          height: () => getRevealHeight(),
+          ease: "power2.out",
+          duration: 0.24,
         },
         0,
       )
       .to(
         videoWrapper,
         {
-          borderRadius: 0,
-          ease: "none",
-          duration: 0.22,
+          borderRadius: "1.8rem",
+          ease: "power2.out",
+          duration: 0.24,
         },
         0,
       )
-      .to({}, { duration: 0.78 });
+      .to(
+        videoWrapper,
+        {
+          "--line-opacity": 0,
+          ease: "none",
+          duration: 0.01,
+        },
+        0.16,
+      )
+      .to(
+        videoPlayer,
+        {
+          opacity: 1,
+          scale: 1,
+          ease: "power1.out",
+          duration: 0.16,
+        },
+        0.09,
+      )
+      .to(
+        videoFrame,
+        {
+          scale: () => getCoverScale(),
+          ease: "none",
+          duration: 0.16,
+        },
+        0.24,
+      )
+      .to(
+        videoWrapper,
+        {
+          borderRadius: 0,
+          ease: "none",
+          duration: 0.2,
+        },
+        0.24,
+      )
+      .to({}, { duration: 0.6 });
   }
 
   const cards = document.querySelectorAll(".sticky-cards .card");
