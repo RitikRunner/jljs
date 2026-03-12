@@ -57,13 +57,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     gsap.set(videoFrame, {
       width: "min(88vw, 96rem)",
-      height: "0.9rem",
+      height: "1.9rem",
     });
 
     const videoTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: videoSection,
-        start: "top top",
+        start: "top center",
         end: "bottom bottom",
         scrub: 1,
         invalidateOnRefresh: true,
@@ -127,7 +127,25 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         0.24,
       )
-      .to({}, { duration: 0.6 });
+      .to({}, { duration: 0.68 })
+      .to(
+        videoFrame,
+        {
+          yPercent: -22,
+          ease: "none",
+          duration: 0.18,
+        },
+        0.92,
+      )
+      .to(
+        videoWrapper,
+        {
+          opacity: 0.94,
+          ease: "none",
+          duration: 0.18,
+        },
+        0.92,
+      );
   }
 
   const cards = document.querySelectorAll(".sticky-cards .card");
@@ -189,5 +207,86 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     },
   });
+
+  const maskedTitles = document.querySelectorAll(".footer .c-masked");
+
+  maskedTitles.forEach((title) => {
+    const baseTarget = title.querySelector(
+      ':scope > [data-text-reveal]:not(.is-masked) .footer-ball-target'
+    );
+    const maskedTarget = title.querySelector(".is-masked .footer-ball-target");
+    if (!baseTarget || !maskedTarget) return;
+
+    const xTo = gsap.quickTo(maskedTarget, "--xpercent", {
+      duration: 0.35,
+      ease: "power3.out",
+    });
+    const yTo = gsap.quickTo(maskedTarget, "--ypercent", {
+      duration: 0.35,
+      ease: "power3.out",
+    });
+
+    const setFromEvent = (event) => {
+      const rect = baseTarget.getBoundingClientRect();
+      const isInsideX = event.clientX >= rect.left && event.clientX <= rect.right;
+      const isInsideY = event.clientY >= rect.top && event.clientY <= rect.bottom;
+
+      if (!isInsideX || !isInsideY) return;
+
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+      xTo(`${Math.max(0, Math.min(100, x))}%`);
+      yTo(`${Math.max(0, Math.min(100, y))}%`);
+    };
+
+    const updateMask = (event) => {
+      setFromEvent(event);
+    };
+
+    title.addEventListener("pointerenter", setFromEvent);
+    title.addEventListener("pointermove", updateMask);
+  });
+
+  const foundersSection = document.querySelector(".founders.u-section");
+  const foundersHeadline = document.querySelector(".founders .founders-headline");
+  const foundersIntro = document.querySelector(".founders .founders-intro");
+  const foundersGrey = document.querySelectorAll(".founders .text-grey");
+
+  if (foundersSection && foundersHeadline && foundersIntro) {
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: foundersSection,
+        start: "80% bottom",
+        end: "bottom bottom",
+        scrub: 1,
+      },
+    })
+      .to(
+        foundersSection,
+        {
+          backgroundColor: "#0b0b0b",
+          color: "#f5f1e8",
+          ease: "none",
+        },
+        0,
+      )
+      .to(
+        foundersGrey,
+        {
+          color: "rgba(245, 241, 232, 0.55)",
+          ease: "none",
+        },
+        0,
+      )
+      .to(
+        foundersIntro,
+        {
+          color: "rgba(245, 241, 232, 0.82)",
+          ease: "none",
+        },
+        0,
+      );
+  }
 });
  
