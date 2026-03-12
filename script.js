@@ -52,7 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const getCoverScale = () => {
       const frameWidth = getRevealWidth() || 1;
       const frameHeight = getRevealHeight() || 1;
-      return Math.max(window.innerWidth / frameWidth, window.innerHeight / frameHeight);
+      return Math.max(
+        window.innerWidth / frameWidth,
+        window.innerHeight / frameHeight
+      );
     };
 
     gsap.set(videoFrame, {
@@ -79,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "power2.out",
           duration: 0.24,
         },
-        0,
+        0
       )
       .to(
         videoWrapper,
@@ -88,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "power2.out",
           duration: 0.24,
         },
-        0,
+        0
       )
       .to(
         videoWrapper,
@@ -97,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "none",
           duration: 0.01,
         },
-        0.16,
+        0.16
       )
       .to(
         videoPlayer,
@@ -107,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "power1.out",
           duration: 0.16,
         },
-        0.09,
+        0.09
       )
       .to(
         videoFrame,
@@ -116,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "none",
           duration: 0.16,
         },
-        0.24,
+        0.24
       )
       .to(
         videoWrapper,
@@ -125,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "none",
           duration: 0.2,
         },
-        0.24,
+        0.24
       )
       .to({}, { duration: 0.68 })
       .to(
@@ -135,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "none",
           duration: 0.18,
         },
-        0.92,
+        0.92
       )
       .to(
         videoWrapper,
@@ -144,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ease: "none",
           duration: 0.18,
         },
-        0.92,
+        0.92
       );
   }
 
@@ -175,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const activeIndex = Math.min(
         Math.floor(progress / segmentSize),
-        totalCards - 1,
+        totalCards - 1
       );
 
       const segProgress = (progress - activeIndex * segmentSize) / segmentSize;
@@ -195,8 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           const behindIndex = i - activeIndex;
           const currentYOffset = (behindIndex - segProgress) * cardYOffset;
-          const currentScale =
-            1 - (behindIndex - segProgress) * cardScaleStep;
+          const currentScale = 1 - (behindIndex - segProgress) * cardScaleStep;
 
           gsap.set(card, {
             yPercent: -50 + currentYOffset,
@@ -208,60 +210,112 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  const maskedTitles = document.querySelectorAll(".footer .c-masked");
+  const wrap = document.querySelector(".c-masked");
+  const baseTarget = document.querySelector(
+    ".c-masked [data-text-reveal]:not(.is-masked) .footer-ball-target"
+  );
+  const ball = document.querySelector(".c-masked .is-masked .footer-ball-target");
 
-  maskedTitles.forEach((title) => {
-    const baseTarget = title.querySelector(
-      ':scope > [data-text-reveal]:not(.is-masked) .footer-ball-target'
+  const state = {
+    currentX: 50,
+    currentY: 50,
+    targetX: 50,
+    targetY: 50,
+    inside: false,
+    ballRadius: 65,
+  };
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function pointInsideRect(x, y, rect) {
+    return (
+      x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
     );
-    const maskedTarget = title.querySelector(".is-masked .footer-ball-target");
-    if (!baseTarget || !maskedTarget) return;
+  }
 
-    const xTo = gsap.quickTo(maskedTarget, "--xpercent", {
-      duration: 0.35,
-      ease: "power3.out",
-    });
-    const yTo = gsap.quickTo(maskedTarget, "--ypercent", {
-      duration: 0.35,
-      ease: "power3.out",
-    });
+  function getConstrainedPoint(mouseX, mouseY, rect, padding) {
+    const localX = mouseX - rect.left;
+    const localY = mouseY - rect.top;
 
-    const setFromEvent = (event) => {
-      const rect = baseTarget.getBoundingClientRect();
-      const isInsideX = event.clientX >= rect.left && event.clientX <= rect.right;
-      const isInsideY = event.clientY >= rect.top && event.clientY <= rect.bottom;
+    const x = clamp(localX, padding, rect.width - padding);
+    const y = clamp(localY, padding, rect.height - padding);
 
-      if (!isInsideX || !isInsideY) return;
-
-      const x = ((event.clientX - rect.left) / rect.width) * 100;
-      const y = ((event.clientY - rect.top) / rect.height) * 100;
-
-      xTo(`${Math.max(0, Math.min(100, x))}%`);
-      yTo(`${Math.max(0, Math.min(100, y))}%`);
+    return {
+      xPercent: (x / rect.width) * 100,
+      yPercent: (y / rect.height) * 100,
     };
+  }
 
-    const updateMask = (event) => {
-      setFromEvent(event);
-    };
+  function updateTargetFromMouse(clientX, clientY) {
+    if (!wrap || !baseTarget || !ball) return;
 
-    title.addEventListener("pointerenter", setFromEvent);
-    title.addEventListener("pointermove", updateMask);
+    const rect = baseTarget.getBoundingClientRect();
+    const padding = state.ballRadius;
+
+    state.inside = pointInsideRect(clientX, clientY, rect);
+
+    const p = getConstrainedPoint(clientX, clientY, rect, padding);
+    state.targetX = p.xPercent;
+    state.targetY = p.yPercent;
+  }
+
+  function setInitialPosition() {
+    state.currentX = 50;
+    state.currentY = 50;
+    state.targetX = 50;
+    state.targetY = 50;
+
+    if (!ball) return;
+
+    gsap.set(ball, {
+      "--xpercent": `${state.currentX}%`,
+      "--ypercent": `${state.currentY}%`,
+    });
+  }
+
+  gsap.ticker.add(() => {
+    if (!ball) return;
+
+    state.currentX += (state.targetX - state.currentX) * 0.14;
+    state.currentY += (state.targetY - state.currentY) * 0.14;
+
+    gsap.set(ball, {
+      "--xpercent": `${state.currentX}%`,
+      "--ypercent": `${state.currentY}%`,
+    });
   });
 
+  if (wrap && baseTarget && ball) {
+    window.addEventListener("mousemove", (e) => {
+      updateTargetFromMouse(e.clientX, e.clientY);
+    });
+
+    window.addEventListener("resize", () => {
+      setInitialPosition();
+    });
+
+    setInitialPosition();
+  }
+
   const foundersSection = document.querySelector(".founders.u-section");
-  const foundersHeadline = document.querySelector(".founders .founders-headline");
+  const foundersHeadline = document.querySelector(
+    ".founders .founders-headline"
+  );
   const foundersIntro = document.querySelector(".founders .founders-intro");
   const foundersGrey = document.querySelectorAll(".founders .text-grey");
 
   if (foundersSection && foundersHeadline && foundersIntro) {
-    gsap.timeline({
-      scrollTrigger: {
-        trigger: foundersSection,
-        start: "80% bottom",
-        end: "bottom bottom",
-        scrub: 1,
-      },
-    })
+    gsap
+      .timeline({
+        scrollTrigger: {
+          trigger: foundersSection,
+          start: "80% bottom",
+          end: "bottom bottom",
+          scrub: 1,
+        },
+      })
       .to(
         foundersSection,
         {
@@ -269,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
           color: "#f5f1e8",
           ease: "none",
         },
-        0,
+        0
       )
       .to(
         foundersGrey,
@@ -277,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
           color: "rgba(245, 241, 232, 0.55)",
           ease: "none",
         },
-        0,
+        0
       )
       .to(
         foundersIntro,
@@ -285,8 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
           color: "rgba(245, 241, 232, 0.82)",
           ease: "none",
         },
-        0,
+        0
       );
   }
 });
- 
