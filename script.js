@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ScrollTrigger.create({
     trigger: ".sticky-cards",
     start: "top top",
-    end: `+=${window.innerHeight * 8}px`,
+    end: `+=${window.innerHeight * 3.8}px`,
     pin: true,
     pinSpacing: true,
     scrub: 1,
@@ -210,12 +210,12 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  const wrap = document.querySelector(".c-masked");
-  const baseTarget = document.querySelector(
-    ".c-masked [data-text-reveal]:not(.is-masked) .footer-ball-target"
-  );
-  const ball = document.querySelector(".c-masked .is-masked .footer-ball-target");
-
+  const wrap = document.querySelector("footer");
+  // const baseTarget = document.querySelector(
+  //   ".c-masked [data-text-reveal]:not(.is-masked) .footer-ball-target"
+  // );
+  const ball = document.querySelector(".c-masked .is-masked");
+  
   const state = {
     currentX: 50,
     currentY: 50,
@@ -249,9 +249,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateTargetFromMouse(clientX, clientY) {
-    if (!wrap || !baseTarget || !ball) return;
+    if (!wrap || !ball) return;
 
-    const rect = baseTarget.getBoundingClientRect();
+    const rect = wrap.getBoundingClientRect();
     const padding = state.ballRadius;
 
     state.inside = pointInsideRect(clientX, clientY, rect);
@@ -287,16 +287,92 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  if (wrap && baseTarget && ball) {
-    window.addEventListener("mousemove", (e) => {
+  if (wrap && ball) {
+    wrap.addEventListener("mousemove", (e) => {
       updateTargetFromMouse(e.clientX, e.clientY);
     });
 
-    window.addEventListener("resize", () => {
+    wrap.addEventListener("resize", () => {
       setInitialPosition();
     });
 
     setInitialPosition();
+  }
+
+  const foundersGrid = document.querySelector(".founders-grid");
+  const founderCards = Array.from(document.querySelectorAll(".founders-grid .founder-card"));
+  const foundersDesktopQuery = window.matchMedia("(min-width: 1001px)");
+
+  function resetFounderCardTransforms() {
+    founderCards.forEach((card) => {
+      card.classList.remove("is-active");
+      card.style.setProperty("--push-x", "0px");
+      card.style.setProperty("--push-y", "0px");
+      card.style.setProperty("--push-r", "0deg");
+      card.style.setProperty("--tilt-x", "0deg");
+      card.style.setProperty("--tilt-y", "0deg");
+      card.style.setProperty("--hover-lift", "0px");
+    });
+
+    if (foundersGrid) {
+      foundersGrid.classList.remove("has-active");
+    }
+  }
+
+  if (foundersGrid && founderCards.length > 0) {
+    founderCards.forEach((card, index) => {
+      card.addEventListener("mouseenter", () => {
+        if (!foundersDesktopQuery.matches) return;
+
+        foundersGrid.classList.add("has-active");
+        card.classList.add("is-active");
+
+        founderCards.forEach((peerCard, peerIndex) => {
+          if (peerIndex === index) return;
+
+          const distance = Math.abs(peerIndex - index);
+          const direction = peerIndex > index ? 1 : -1;
+          const pushX = direction * (1 + distance * 0.9);
+          const pushY = distance * 0.35;
+          const pushR = direction * distance * 1.4;
+
+          peerCard.style.setProperty("--push-x", `${pushX}rem`);
+          peerCard.style.setProperty("--push-y", `${pushY}rem`);
+          peerCard.style.setProperty("--push-r", `${pushR}deg`);
+        });
+      });
+
+      card.addEventListener("mousemove", (event) => {
+        if (!foundersDesktopQuery.matches) return;
+
+        const rect = card.getBoundingClientRect();
+        const offsetX = (event.clientX - rect.left) / rect.width;
+        const offsetY = (event.clientY - rect.top) / rect.height;
+        const tiltY = (offsetX - 0.5) * 14;
+        const tiltX = (0.5 - offsetY) * 10;
+
+        card.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}deg`);
+        card.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}deg`);
+      });
+
+      card.addEventListener("mouseleave", () => {
+        card.style.setProperty("--tilt-x", "0deg");
+        card.style.setProperty("--tilt-y", "0deg");
+        card.classList.remove("is-active");
+
+        founderCards.forEach((peerCard) => {
+          peerCard.style.setProperty("--push-x", "0px");
+          peerCard.style.setProperty("--push-y", "0px");
+          peerCard.style.setProperty("--push-r", "0deg");
+        });
+
+        foundersGrid.classList.remove("has-active");
+      });
+    });
+
+    foundersDesktopQuery.addEventListener("change", () => {
+      resetFounderCardTransforms();
+    });
   }
 
   const foundersSection = document.querySelector(".founders.u-section");
