@@ -2,6 +2,54 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
+  // --------------------------------
+  // HERO MENU
+  // --------------------------------
+  const heroMenuButton = document.querySelector(".hero-menu-button");
+  const heroMenuOverlay = document.querySelector(".hero-menu-overlay");
+  const heroMenuClose = document.querySelector(".hero-menu-close");
+  const heroMenuLinks = document.querySelectorAll(".hero-menu-nav a");
+
+  function openHeroMenu() {
+    if (!heroMenuButton || !heroMenuOverlay) return;
+
+    heroMenuOverlay.classList.add("is-open");
+    heroMenuButton.classList.add("is-hidden");
+    heroMenuButton.setAttribute("aria-expanded", "true");
+    heroMenuOverlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("hero-menu-open");
+  }
+
+  function closeHeroMenu() {
+    if (!heroMenuButton || !heroMenuOverlay) return;
+
+    heroMenuOverlay.classList.remove("is-open");
+    heroMenuButton.classList.remove("is-hidden");
+    heroMenuButton.setAttribute("aria-expanded", "false");
+    heroMenuOverlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("hero-menu-open");
+  }
+
+  if (heroMenuButton && heroMenuOverlay) {
+    heroMenuButton.addEventListener("click", openHeroMenu);
+  }
+
+  if (heroMenuClose) {
+    heroMenuClose.addEventListener("click", closeHeroMenu);
+  }
+
+  heroMenuLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      closeHeroMenu();
+    });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && heroMenuOverlay?.classList.contains("is-open")) {
+      closeHeroMenu();
+    }
+  });
+
 gsap.registerPlugin(ScrollTrigger);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -25,6 +73,122 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const lenis = new Lenis();
+
+  const heroRoot = document.querySelector(".css-b45nl7");
+  const heroContentBlock = document.querySelector(".css-fmco55");
+  const heroShowreelBlock = document.querySelector(".css-157o6oq");
+  const heroCardWrap = document.querySelector(
+    ".styles_clipPath_wrapper__2EjOL"
+  );
+  const heroCard = document.querySelector(
+    ".styles_clipPath_wrapper_figure__thifo"
+  );
+  const heroImage = document.querySelector(".styles_content_image__bvRpE");
+  const heroProgressWrap = document.querySelector(".css-1ff90ps");
+  const heroProgressBar = document.querySelector(".css-lnwywb");
+  const heroScrollTarget = document.getElementById("home-hero-scroll-target");
+
+  const heroMuteButton =
+    document.querySelector(".VideoControl_iconInner__wCHTN") ||
+    document.querySelector(".css-lp5lkp");
+
+  const heroMuteIcon = document.querySelector(
+    ".VideoControl_icon__mute__9AGnd"
+  );
+  const heroUnmuteIcon = document.querySelector(
+    ".VideoControl_icon__unmute__fkfIM"
+  );
+
+  const heroLines = document.querySelectorAll(".line");
+  const heroLineMasks = document.querySelectorAll(".line-mask");
+
+  // --------------------------------
+  // HERO BACKGROUND SHAPES STATE
+  // --------------------------------
+  const heroBgState = {
+    currentX: 0,
+    currentY: 0,
+    targetX: 0,
+    targetY: 0,
+  };
+
+  function updateHeroCursorTargets(event) {
+    if (!heroRoot) return;
+
+    const rect = heroRoot.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+
+    heroBgState.targetX = (px - 0.5) * 2;
+    heroBgState.targetY = (py - 0.5) * 2;
+  }
+
+  function resetHeroCursorTargets() {
+    heroBgState.targetX = 0;
+    heroBgState.targetY = 0;
+  }
+
+  function updateHeroBackgroundShapes() {
+    if (!heroRoot) return;
+
+    heroBgState.currentX += (heroBgState.targetX - heroBgState.currentX) * 0.08;
+    heroBgState.currentY += (heroBgState.targetY - heroBgState.currentY) * 0.08;
+
+    const leftX = heroBgState.currentX * -20;
+    const leftY = heroBgState.currentY * 14;
+    const leftR = heroBgState.currentX * -3;
+    const leftS = 1 + Math.abs(heroBgState.currentX) * 0.015;
+
+    const rightX = heroBgState.currentX * 24;
+    const rightY = heroBgState.currentY * -18;
+    const rightR = heroBgState.currentX * 3.5;
+    const rightS = 1 + Math.abs(heroBgState.currentY) * 0.015;
+
+    heroRoot.style.setProperty("--shape-left-x", `${leftX}px`);
+    heroRoot.style.setProperty("--shape-left-y", `${leftY}px`);
+    heroRoot.style.setProperty("--shape-left-r", `${leftR}deg`);
+    heroRoot.style.setProperty("--shape-left-s", `${leftS}`);
+
+    heroRoot.style.setProperty("--shape-right-x", `${rightX}px`);
+    heroRoot.style.setProperty("--shape-right-y", `${rightY}px`);
+    heroRoot.style.setProperty("--shape-right-r", `${rightR}deg`);
+    heroRoot.style.setProperty("--shape-right-s", `${rightS}`);
+  }
+
+  // --------------------------------
+  // HERO SCROLL
+  // --------------------------------
+  const handleHeroScroll = () => {
+    if (!heroRoot) return;
+
+    const rect = heroRoot.getBoundingClientRect();
+    const heroHeight = rect.height || window.innerHeight;
+    const visibleProgress = Math.min(Math.max(-rect.top / heroHeight, 0), 1);
+
+    if (heroProgressBar) {
+      heroProgressBar.style.transform = `scaleX(${visibleProgress})`;
+    }
+
+    if (heroContentBlock) {
+      const y = visibleProgress * 40;
+      const opacity = 1 - visibleProgress * 0.35;
+      heroContentBlock.style.transform = `translateY(${y}px)`;
+      heroContentBlock.style.opacity = `${opacity}`;
+    }
+
+    if (heroCardWrap) {
+      const scrollY = visibleProgress * 20;
+      heroCardWrap.style.transform = `translate(-50%, calc(-50% + ${scrollY}px))`;
+    }
+
+    if (heroImage) {
+      const y = visibleProgress * 20;
+      heroImage.style.transform = `translate(0px, ${y}px)`;
+    }
+
+    heroRoot.style.setProperty("--shape-scroll", `${visibleProgress}`);
+  };
+
   lenis.on("scroll", (e) => {
     ScrollTrigger.update();
     if (typeof e?.progress === "number") {
@@ -32,10 +196,19 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       syncFromWindowScroll();
     }
+
+    handleHeroScroll();
   });
+
   gsap.ticker.add((time) => {
     lenis.raf(time * 1000);
   });
+
+  // background shapes ticker
+  gsap.ticker.add(() => {
+    updateHeroBackgroundShapes();
+  });
+
   gsap.ticker.lagSmoothing(0);
   window.addEventListener("resize", syncFromWindowScroll);
   syncFromWindowScroll();
@@ -153,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const cards = document.querySelectorAll(".sticky-cards .card");
   const totalCards = cards.length;
-  const segmentSize = 1 / totalCards;
+  const segmentSize = totalCards > 0 ? 1 / totalCards : 1;
 
   const cardYOffset = 5;
   const cardScaleStep = 0.075;
@@ -166,56 +339,58 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  ScrollTrigger.create({
-    trigger: ".sticky-cards",
-    start: "top top",
-    end: `+=${window.innerHeight * 3.8}px`,
-    pin: true,
-    pinSpacing: true,
-    scrub: 1,
-    onUpdate: (self) => {
-      const progress = self.progress;
+  if (cards.length > 0) {
+    ScrollTrigger.create({
+      trigger: ".sticky-cards",
+      start: "top top",
+      end: `+=${window.innerHeight * 3.8}px`,
+      pin: true,
+      pinSpacing: true,
+      scrub: 1,
+      onUpdate: (self) => {
+        const progress = self.progress;
 
-      const activeIndex = Math.min(
-        Math.floor(progress / segmentSize),
-        totalCards - 1
-      );
+        const activeIndex = Math.min(
+          Math.floor(progress / segmentSize),
+          totalCards - 1
+        );
 
-      const segProgress = (progress - activeIndex * segmentSize) / segmentSize;
+        const segProgress =
+          (progress - activeIndex * segmentSize) / segmentSize;
 
-      cards.forEach((card, i) => {
-        if (i < activeIndex) {
-          gsap.set(card, {
-            yPercent: -250,
-            rotationX: 35,
-          });
-        } else if (i === activeIndex) {
-          gsap.set(card, {
-            yPercent: gsap.utils.interpolate(-50, -200, segProgress),
-            rotationX: gsap.utils.interpolate(0, 35, segProgress),
-            scale: 1,
-          });
-        } else {
-          const behindIndex = i - activeIndex;
-          const currentYOffset = (behindIndex - segProgress) * cardYOffset;
-          const currentScale = 1 - (behindIndex - segProgress) * cardScaleStep;
+        cards.forEach((card, i) => {
+          if (i < activeIndex) {
+            gsap.set(card, {
+              yPercent: -250,
+              rotationX: 35,
+            });
+          } else if (i === activeIndex) {
+            gsap.set(card, {
+              yPercent: gsap.utils.interpolate(-50, -200, segProgress),
+              rotationX: gsap.utils.interpolate(0, 35, segProgress),
+              scale: 1,
+            });
+          } else {
+            const behindIndex = i - activeIndex;
+            const currentYOffset =
+              (behindIndex - segProgress) * cardYOffset;
+            const currentScale =
+              1 - (behindIndex - segProgress) * cardScaleStep;
 
-          gsap.set(card, {
-            yPercent: -50 + currentYOffset,
-            rotationX: 0,
-            scale: currentScale,
-          });
-        }
-      });
-    },
-  });
+            gsap.set(card, {
+              yPercent: -50 + currentYOffset,
+              rotationX: 0,
+              scale: currentScale,
+            });
+          }
+        });
+      },
+    });
+  }
 
   const wrap = document.querySelector("footer");
-  // const baseTarget = document.querySelector(
-  //   ".c-masked [data-text-reveal]:not(.is-masked) .footer-ball-target"
-  // );
   const ball = document.querySelector(".c-masked .is-masked");
-  
+
   const state = {
     currentX: 50,
     currentY: 50,
@@ -292,15 +467,13 @@ document.addEventListener("DOMContentLoaded", () => {
       updateTargetFromMouse(e.clientX, e.clientY);
     });
 
-    wrap.addEventListener("resize", () => {
-      setInitialPosition();
-    });
-
     setInitialPosition();
   }
 
   const foundersGrid = document.querySelector(".founders-grid");
-  const founderCards = Array.from(document.querySelectorAll(".founders-grid .founder-card"));
+  const founderCards = Array.from(
+    document.querySelectorAll(".founders-grid .founder-card")
+  );
   const foundersDesktopQuery = window.matchMedia("(min-width: 1001px)");
 
   function resetFounderCardTransforms() {
@@ -417,5 +590,230 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         0
       );
+  }
+
+  // --------------------------------
+  // HERO SETUP
+  // --------------------------------
+  function setupHeroInitialStates() {
+    heroLines.forEach((line, index) => {
+      gsap.set(line, {
+        yPercent: 110,
+        opacity: 0,
+      });
+
+      line.style.transition =
+        "transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.9s ease";
+      line.style.transitionDelay = `${index * 0.12}s`;
+    });
+
+    if (heroShowreelBlock) {
+      gsap.set(heroShowreelBlock, {
+        opacity: 0,
+        y: 30,
+      });
+    }
+
+    if (heroMuteIcon) {
+      heroMuteIcon.style.display = "block";
+    }
+
+    if (heroUnmuteIcon) {
+      heroUnmuteIcon.style.display = "none";
+    }
+
+    if (heroProgressWrap) {
+      heroProgressWrap.style.transformOrigin = "left center";
+    }
+
+    if (heroProgressBar) {
+      heroProgressBar.style.transformOrigin = "left center";
+      heroProgressBar.style.transform = "scaleX(0)";
+    }
+
+    heroLineMasks.forEach((mask) => {
+      mask.style.overflow = "hidden";
+    });
+
+    if (heroRoot) {
+      heroRoot.style.setProperty("--shape-left-x", "0px");
+      heroRoot.style.setProperty("--shape-left-y", "0px");
+      heroRoot.style.setProperty("--shape-left-r", "0deg");
+      heroRoot.style.setProperty("--shape-left-s", "1");
+      heroRoot.style.setProperty("--shape-right-x", "0px");
+      heroRoot.style.setProperty("--shape-right-y", "0px");
+      heroRoot.style.setProperty("--shape-right-r", "0deg");
+      heroRoot.style.setProperty("--shape-right-s", "1");
+      heroRoot.style.setProperty("--shape-scroll", "0");
+    }
+  }
+
+  function animateHeroLinesIn() {
+    requestAnimationFrame(() => {
+      heroLines.forEach((line) => {
+        line.style.transform = "translateY(0)";
+        line.style.opacity = "1";
+      });
+    });
+  }
+
+  function observeHeroShowreel() {
+    if (!heroShowreelBlock) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            gsap.to(heroShowreelBlock, {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              ease: "power3.out",
+            });
+            observer.unobserve(heroShowreelBlock);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(heroShowreelBlock);
+  }
+
+  function updateHeroMuteIcons(isMuted) {
+    if (heroMuteIcon) {
+      heroMuteIcon.style.display = isMuted ? "block" : "none";
+    }
+    if (heroUnmuteIcon) {
+      heroUnmuteIcon.style.display = isMuted ? "none" : "block";
+    }
+  }
+
+  function findHeroTargetMedia() {
+    if (!heroRoot) return null;
+
+    return (
+      heroRoot.querySelector("video") ||
+      document.querySelector("video") ||
+      heroRoot.querySelector("audio") ||
+      null
+    );
+  }
+
+  function bindHeroMuteButton() {
+    if (!heroMuteButton) return;
+
+    const media = findHeroTargetMedia();
+    let isMuted = media ? !!media.muted : true;
+
+    updateHeroMuteIcons(isMuted);
+
+    heroMuteButton.addEventListener("click", () => {
+      const targetMedia = findHeroTargetMedia();
+
+      if (targetMedia) {
+        targetMedia.muted = !targetMedia.muted;
+        updateHeroMuteIcons(targetMedia.muted);
+      } else {
+        isMuted = !isMuted;
+        updateHeroMuteIcons(isMuted);
+      }
+    });
+  }
+
+  function bindHeroScrollTarget() {
+    if (!heroScrollTarget) return;
+
+    const triggers = document.querySelectorAll(
+      '[href="#home-hero-scroll-target"]'
+    );
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener("click", (e) => {
+        e.preventDefault();
+        lenis.scrollTo(heroScrollTarget);
+      });
+    });
+  }
+
+  function bindInteractiveHeroCard() {
+    if (!heroRoot || !heroCard || !heroCardWrap) return;
+
+    let currentRX = 0;
+    let currentRY = 0;
+    let targetRX = 0;
+    let targetRY = 0;
+    let currentSlitX = 0;
+    let targetSlitX = 0;
+    let rafId = null;
+
+    const animate = () => {
+      currentRX += (targetRX - currentRX) * 0.12;
+      currentRY += (targetRY - currentRY) * 0.12;
+      currentSlitX += (targetSlitX - currentSlitX) * 0.12;
+
+      heroCard.style.transform = `
+        perspective(1200px)
+        rotateX(${currentRX}deg)
+        rotateY(${currentRY}deg)
+        translateZ(0)
+      `;
+
+      heroCard.style.setProperty("--slit-x", `${currentSlitX}px`);
+
+      heroCard.style.boxShadow = `
+        ${currentRY * 1.6}px ${18 + Math.abs(currentRX) * 2}px 60px rgba(0, 0, 0, 0.16)
+      `;
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    const onMove = (e) => {
+      const rect = heroCardWrap.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
+
+      const cx = px - 0.5;
+      const cy = py - 0.5;
+
+      targetRY = cx * 14;
+      targetRX = -cy * 10;
+      targetSlitX = cx * 22;
+
+      const slit = 11 + Math.abs(cx) * 2.4;
+      heroCard.style.setProperty("--slit-width", `${slit}%`);
+    };
+
+    const onLeave = () => {
+      targetRX = 0;
+      targetRY = 0;
+      targetSlitX = 0;
+      heroCard.style.setProperty("--slit-width", "11%");
+    };
+
+    heroCardWrap.addEventListener("mousemove", onMove);
+    heroCardWrap.addEventListener("mouseleave", onLeave);
+
+    if (!rafId) {
+      animate();
+    }
+  }
+
+  if (heroRoot) {
+    setupHeroInitialStates();
+    animateHeroLinesIn();
+    observeHeroShowreel();
+    bindHeroMuteButton();
+    bindHeroScrollTarget();
+    bindInteractiveHeroCard();
+    handleHeroScroll();
+
+    heroRoot.addEventListener("mousemove", updateHeroCursorTargets);
+    heroRoot.addEventListener("mouseleave", resetHeroCursorTargets);
+
+    window.addEventListener("resize", () => {
+      syncFromWindowScroll();
+      handleHeroScroll();
+    });
   }
 });
